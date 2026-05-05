@@ -294,6 +294,45 @@
 
   /* scrollbar hidden */
   ::-webkit-scrollbar { display: none; }
+
+  /* ── LANDSCAPE / SHORT VIEWPORT ── */
+  @media (max-height: 540px), (orientation: landscape) and (max-height: 700px) {
+    html, body { font-size: 11px; }
+
+    #titlebar { height: 22px; }
+    #titlebar-center { font-size: 10px; }
+    #branch-badge { font-size: 9px; padding: 0 5px; }
+
+    #tabs { height: 28px; }
+    .tab  { height: 26px; font-size: 10.5px; padding: 0 10px; }
+
+    #activitybar { width: 36px; }
+    .ab-icon { width: 28px; height: 28px; font-size: 13px; }
+
+    #sidebar { width: 160px; font-size: 10px; }
+    .tree-item { padding: 1px 8px; }
+
+    #gutter { width: 38px; min-width: 38px; font-size: 10.5px; }
+    .ln { height: 17px; line-height: 17px; font-size: 10.5px; }
+    .code-line { height: 17px; line-height: 17px; font-size: 11px; }
+
+    #bottom-panel { height: 90px; }
+    #panel-tabs   { height: 22px; }
+    .ptab         { height: 20px; font-size: 10px; padding: 0 10px; }
+    #terminal-body { font-size: 10.5px; padding: 3px 10px; }
+
+    #statusbar { height: 20px; font-size: 10px; gap: 10px; }
+
+    #minimap { width: 50px; }
+
+    #layout { height: calc(100vh - 22px - 28px - 20px); }
+  }
+
+  /* very wide landscape — give code more room */
+  @media (orientation: landscape) and (min-aspect-ratio: 16/9) {
+    #sidebar { width: 140px; }
+    #minimap { width: 44px; }
+  }
 </style>
 </head>
 <body>
@@ -663,12 +702,28 @@ buildEditor();
 // ─── STATE ───────────────────────────────────────────────────────────────────
 let currentLine  = 63;
 let scrollOffsetY= 0;
-const LINE_H = 20;
-const VISIBLE    = Math.floor((window.innerHeight - 28 - 34 - 24 - 140) / LINE_H);
 let isTyping     = false;
 let typingInsert = '';
 let typingLineIdx= 0;
 let typingCharIdx= 0;
+
+function getLineH() {
+  const sample = codeInner.querySelector('.code-line');
+  return sample ? (sample.getBoundingClientRect().height || 20) : 20;
+}
+function getVisible() {
+  const editorEl = document.getElementById('editor');
+  const h = editorEl ? editorEl.clientHeight : (window.innerHeight - 28 - 34 - 24 - 90);
+  return Math.max(1, Math.floor(h / getLineH()));
+}
+let LINE_H  = 20;
+let VISIBLE = 20;
+function refreshDimensions() {
+  LINE_H  = getLineH();
+  VISIBLE = getVisible();
+}
+window.addEventListener('resize', () => { refreshDimensions(); scrollTo(currentLine); });
+screen.orientation && screen.orientation.addEventListener('change', () => { refreshDimensions(); scrollTo(currentLine); });
 
 // ─── SCROLL ──────────────────────────────────────────────────────────────────
 function scrollTo(line) {
@@ -796,8 +851,8 @@ setInterval(() => {
 }, 300);
 
 // ─── SCHEDULE EVENTS (use setInterval so they fire off-focus) ────────────────
-setActiveLine(63);
-scrollTo(63);
+// Defer init scroll until after layout/dimensions are ready
+requestAnimationFrame(() => { refreshDimensions(); setActiveLine(63); scrollTo(63); });
 
 // Typing every ~8-14s
 setInterval(() => {
