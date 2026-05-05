@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IDE — fbb-core</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg:        #1e1e2e;
+    --bg2:       #181825;
+    --bg3:       #11111b;
+    --surface:   #313244;
+    --border:    #45475a;
+    --muted:     #585b70;
+    --text:      #cdd6f4;
+    --subtext:   #a6adc8;
+    --red:       #f38ba8;
+    --orange:    #fab387;
+    --yellow:    #f9e2af;
+    --green:     #a6e3a1;
+    --teal:      #94e2d5;
+    --blue:      #89b4fa;
+    --lavender:  #b4befe;
+    --mauve:     #cba6f7;
+    --pink:      #f5c2e7;
+    --sky:       #89dceb;
+    --peach:     #fab387;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg3);
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--text);
+    overflow: hidden;
+  }
+
+  /* ── TITLE BAR ── */
+  #titlebar {
+    height: 28px;
+    background: var(--bg3);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    gap: 6px;
+    border-bottom: 1px solid var(--border);
+    user-select: none;
+  }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot.red    { background: #ff5f57; }
+  .dot.yellow { background: #febc2e; }
+  .dot.green  { background: #28c840; }
+  #titlebar-center {
+    flex: 1; text-align: center;
+    font-size: 11px; color: var(--subtext);
+    letter-spacing: .3px;
+  }
+  #branch-badge {
+    font-size: 10px; color: var(--mauve);
+    border: 1px solid var(--mauve);
+    border-radius: 3px; padding: 1px 6px;
+    opacity: .75;
+  }
+
+  /* ── TABS ── */
+  #tabs {
+    height: 34px;
+    background: var(--bg2);
+    display: flex;
+    align-items: flex-end;
+    border-bottom: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .tab {
+    height: 30px;
+    padding: 0 14px;
+    display: flex; align-items: center; gap: 7px;
+    font-size: 11.5px;
+    color: var(--subtext);
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    cursor: default;
+    white-space: nowrap;
+    position: relative;
+  }
+  .tab.active {
+    background: var(--bg);
+    color: var(--text);
+    border-top: 2px solid var(--blue);
+  }
+  .tab-icon { font-size: 10px; }
+  .tab-close { font-size: 10px; color: var(--muted); margin-left: 4px; }
+
+  /* ── LAYOUT ── */
+  #layout {
+    display: flex;
+    height: calc(100vh - 28px - 34px - 24px);
+  }
+
+  /* ── ACTIVITY BAR ── */
+  #activitybar {
+    width: 42px;
+    background: var(--bg3);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center;
+    padding-top: 8px; gap: 2px;
+  }
+  .ab-icon {
+    width: 34px; height: 34px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; color: var(--muted); border-radius: 5px;
+    cursor: default;
+  }
+  .ab-icon.active { color: var(--text); background: var(--surface); }
+  .ab-sep { height: 1px; width: 24px; background: var(--border); margin: 4px 0; }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: 200px;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    font-size: 11px;
+    overflow: hidden;
+  }
+  .sidebar-title {
+    padding: 8px 12px 4px;
+    font-size: 10px; letter-spacing: .8px; text-transform: uppercase;
+    color: var(--subtext); font-weight: 600;
+  }
+  .tree-item {
+    padding: 2px 10px;
+    display: flex; align-items: center; gap: 6px;
+    color: var(--subtext); cursor: default;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .tree-item:hover { background: var(--surface); color: var(--text); }
+  .tree-item.active { background: var(--surface); color: var(--text); }
+  .tree-item .fi { font-size: 10px; min-width: 12px; }
+  .tree-indent-1 { padding-left: 20px; }
+  .tree-indent-2 { padding-left: 32px; }
+  .tree-indent-3 { padding-left: 44px; }
+  .tree-indent-4 { padding-left: 56px; }
+
+  /* ── EDITOR ── */
+  #editor {
+    flex: 1;
+    background: var(--bg);
+    display: flex;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* gutter */
+  #gutter {
+    width: 46px; min-width: 46px;
+    padding: 0 8px 0 0;
+    text-align: right;
+    color: var(--muted);
+    background: var(--bg);
+    font-size: 12px;
+    line-height: 1.6;
+    user-select: none;
+    overflow: hidden;
+    padding-top: 10px;
+  }
+  .ln { height: 20px; line-height: 20px; font-size: 11.5px; }
+  .ln.active-ln { color: var(--subtext); }
+
+  /* code */
+  #code-scroll {
+    flex: 1;
+    overflow: hidden;
+    padding: 10px 0 10px 14px;
+    position: relative;
+  }
+  #code-inner {
+    position: absolute;
+    top: 0; left: 14px;
+    will-change: transform;
+  }
+  .code-line {
+    height: 20px; line-height: 20px;
+    font-size: 12.5px;
+    white-space: pre;
+    display: flex; align-items: center;
+  }
+  .code-line.active-line { background: rgba(255,255,255,.04); }
+  .cursor-line::after {
+    content: ''; display: inline-block;
+    width: 2px; height: 14px;
+    background: var(--blue);
+    margin-left: 1px;
+    vertical-align: middle;
+    animation: blink 1.1s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* syntax colors */
+  .kw  { color: var(--mauve); }
+  .kw2 { color: var(--red); }
+  .typ { color: var(--yellow); }
+  .fn  { color: var(--blue); }
+  .str { color: var(--green); }
+  .cmt { color: var(--muted); font-style: italic; }
+  .ann { color: var(--peach); }
+  .num { color: var(--peach); }
+  .pkg { color: var(--teal); }
+  .var { color: var(--text); }
+  .op  { color: var(--sky); }
+  .punc{ color: var(--subtext); }
+  .cls { color: var(--yellow); }
+  .iface { color: var(--teal); }
+  .const { color: var(--orange); }
+  .lit { color: var(--green); }
+
+  /* minimap */
+  #minimap {
+    width: 70px;
+    background: var(--bg);
+    border-left: 1px solid var(--border);
+    opacity: .55;
+    overflow: hidden;
+    padding-top: 10px;
+    position: relative;
+  }
+  .mm-line {
+    height: 2px; margin: 1.5px 6px;
+    border-radius: 1px;
+    background: var(--muted);
+    opacity: .4;
+  }
+  .mm-line.mm-kw  { background: var(--mauve); opacity: .7; }
+  .mm-line.mm-str { background: var(--green); opacity: .6; }
+  .mm-line.mm-ann { background: var(--peach); opacity: .65; }
+  .mm-line.mm-fn  { background: var(--blue);  opacity: .65; }
+  #mm-viewport {
+    position: absolute;
+    left: 0; right: 0;
+    background: rgba(255,255,255,.07);
+    border-radius: 2px;
+    transition: top .15s ease;
+  }
+
+  /* ── BOTTOM PANEL ── */
+  #bottom-panel {
+    height: 140px;
+    background: var(--bg2);
+    border-top: 1px solid var(--border);
+    display: flex; flex-direction: column;
+  }
+  #panel-tabs {
+    display: flex; border-bottom: 1px solid var(--border);
+    height: 28px; align-items: flex-end;
+  }
+  .ptab {
+    padding: 0 14px; height: 26px; font-size: 11px;
+    display: flex; align-items: center;
+    color: var(--muted); cursor: default;
+    border-right: 1px solid var(--border);
+  }
+  .ptab.active { color: var(--text); border-top: 2px solid var(--blue); background: var(--bg3); }
+  #terminal-body {
+    flex: 1; padding: 6px 14px;
+    font-size: 11.5px;
+    overflow: hidden;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    gap: 1px;
+  }
+  .term-line { white-space: pre; }
+  .term-prompt { color: var(--green); }
+  .term-cmd    { color: var(--text); }
+  .term-out    { color: var(--subtext); }
+  .term-err    { color: var(--red); }
+  .term-warn   { color: var(--yellow); }
+  .term-info   { color: var(--blue); }
+
+  /* ── STATUS BAR ── */
+  #statusbar {
+    height: 24px;
+    background: var(--blue);
+    display: flex; align-items: center;
+    padding: 0 10px; gap: 16px;
+    font-size: 11px; color: var(--bg3);
+    font-weight: 500;
+  }
+  #statusbar .sep { color: rgba(0,0,0,.25); }
+  #statusbar .right { margin-left: auto; display: flex; gap: 14px; }
+
+  /* scrollbar hidden */
+  ::-webkit-scrollbar { display: none; }
+</style>
+</head>
+<body>
+
+<!-- TITLE BAR -->
+<div id="titlebar">
+  <div class="dot red"></div>
+  <div class="dot yellow"></div>
+  <div class="dot green"></div>
+  <div id="titlebar-center">fbb-core-copy — IntelliJ IDEA</div>
+  <div id="branch-badge">⎇ release/4.15.0-RELEASE</div>
+</div>
+
+<!-- TABS -->
+<div id="tabs">
+  <div class="tab active">
+    <span class="tab-icon" style="color:var(--orange)">☕</span>
+    ExternalCreateStockTransportReturnCommandImpl.java
+    <span class="tab-close">×</span>
+  </div>
+  <div class="tab">
+    <span class="tab-icon" style="color:var(--orange)">☕</span>
+    DocumentType.java
+    <span class="tab-close">×</span>
+  </div>
+  <div class="tab">
+    <span class="tab-icon" style="color:var(--orange)">☕</span>
+    StockTransportReturnCommandHelper.java
+    <span class="tab-close">×</span>
+  </div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div id="layout">
+
+  <!-- ACTIVITY BAR -->
+  <div id="activitybar">
+    <div class="ab-icon active">📁</div>
+    <div class="ab-icon">🔍</div>
+    <div class="ab-icon">⎇</div>
+    <div class="ab-sep"></div>
+    <div class="ab-icon">🐛</div>
+    <div class="ab-icon">⬡</div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sidebar-title">Explorer</div>
+    <div class="tree-item"><span class="fi">▾</span> fbb-core-copy</div>
+    <div class="tree-item tree-indent-1"><span class="fi">▾</span> src/main/java</div>
+    <div class="tree-item tree-indent-2"><span class="fi">▾</span> com.gdn.fbb.core</div>
+    <div class="tree-item tree-indent-3"><span class="fi">▾</span> command</div>
+    <div class="tree-item tree-indent-4"><span class="fi">▾</span> impl</div>
+    <div class="tree-item tree-indent-4 active" style="padding-left:64px"><span class="fi" style="color:var(--orange)">☕</span> ExternalCreate…Impl.java</div>
+    <div class="tree-item tree-indent-3"><span class="fi">▾</span> constant</div>
+    <div class="tree-item tree-indent-4" style="padding-left:64px"><span class="fi" style="color:var(--orange)">☕</span> DocumentType.java</div>
+    <div class="tree-item tree-indent-4" style="padding-left:64px"><span class="fi" style="color:var(--orange)">☕</span> StockType.java</div>
+    <div class="tree-item tree-indent-3"><span class="fi">▾</span> entity</div>
+    <div class="tree-item tree-indent-4" style="padding-left:64px"><span class="fi" style="color:var(--orange)">☕</span> StockTransportReturn.java</div>
+    <div class="tree-item tree-indent-4" style="padding-left:64px"><span class="fi" style="color:var(--orange)">☕</span> StockTransportOrder.java</div>
+    <div class="tree-item tree-indent-3"><span class="fi">▾</span> helper</div>
+    <div class="tree-item tree-indent-4" style="padding-left:64px"><span class="fi" style="color:var(--orange)">☕</span> StockTransportReturnCommandHelper.java</div>
+    <div class="tree-item tree-indent-3"><span class="fi">▾</span> repository</div>
+    <div class="tree-item tree-indent-4" style="padding-left:64px"><span class="fi" style="color:var(--orange)">☕</span> StockTransportReturnRepository.java</div>
+    <div class="tree-item tree-indent-3"><span class="fi">▾</span> service</div>
+    <div class="tree-item tree-indent-4" style="padding-left:64px"><span class="fi" style="color:var(--orange)">☕</span> DocumentSequenceService.java</div>
+    <div class="tree-item tree-indent-2"><span class="fi">▶</span> resources</div>
+    <div class="tree-item tree-indent-1"><span class="fi">▶</span> src/test/java</div>
+    <div class="tree-item tree-indent-1"><span class="fi" style="color:var(--orange)">🍵</span> pom.xml</div>
+  </div>
+
+  <!-- EDITOR -->
+  <div id="editor">
+    <div id="gutter" id="gutter"></div>
+    <div id="code-scroll">
+      <div id="code-inner"></div>
+    </div>
+    <div id="minimap">
+      <div id="mm-viewport"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM PANEL -->
+<div id="bottom-panel">
+  <div id="panel-tabs">
+    <div class="ptab active">Terminal</div>
+    <div class="ptab">Problems <span style="color:var(--red);margin-left:5px">10</span></div>
+    <div class="ptab">Run</div>
+    <div class="ptab">Git</div>
+  </div>
+  <div id="terminal-body"></div>
+</div>
+
+<!-- STATUS BAR -->
+<div id="statusbar">
+  <span>⎇ release/4.15.0-RELEASE</span>
+  <span class="sep">|</span>
+  <span id="sb-ln">Ln 64, Col 28</span>
+  <span class="sep">|</span>
+  <span>UTF-8</span>
+  <div class="right">
+    <span>LF</span>
+    <span>Java 17</span>
+    <span>🔔 0</span>
+    <span id="sb-spinner">●</span>
+  </div>
+</div>
+
+<script>
+// ─── CODE CONTENT ───────────────────────────────────────────────────────────
+const H = (cls, txt) => `<span class="${cls}">${txt}</span>`;
+const kw  = t => H('kw', t);
+const kw2 = t => H('kw2', t);
+const typ = t => H('typ', t);
+const fn  = t => H('fn', t);
+const str = t => H('str', t);
+const cmt = t => H('cmt', t);
+const ann = t => H('ann', t);
+const num = t => H('num', t);
+const pkg = t => H('pkg', t);
+const op  = t => H('op', t);
+const cls = t => H('cls', t);
+const ifc = t => H('iface', t);
+const con = t => H('const', t);
+
+const LINES = [
+`${kw('package')} ${pkg('com.gdn.fbb.core.command.impl.stocktransportreturn')};`,
+``,
+`${kw('import')} ${pkg('com.gdn.fbb.core.command.helper')}.${cls('StockTransportReturnCommandHelper')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.command.helper')}.${cls('StockTransportReturnCommandHelper')}.${con('StockTransportReturnItemOperationBatch')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.command.model.stocktransportreturn')}.${cls('ExternalCreateStockTransportReturnCommandRequest')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.command.model.stocktransportreturn')}.${cls('ExternalStockTransportReturnItemRequest')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.command.stocktransportreturn')}.${cls('ExternalCreateStockTransportReturnCommand')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.constant')}.${cls('DocumentType')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.constant')}.${cls('FailedDocumentStatus')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.constant')}.${cls('StockTransportOrderType')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.constant')}.${cls('StockTransportReturnItemStatus')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.constant')}.${cls('StockTransportReturnStatus')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.constant')}.${cls('StockType')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.entity.stocktransportorder')}.${cls('StockTransportOrder')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.entity.stocktransportreturn')}.${cls('StockTransportReturn')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.entity.stocktransportreturn')}.${cls('StockTransportReturnItem')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.entity.transferrequest')}.${cls('TransferRequest')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.exception')}.${cls('BusinessException')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.helper')}.${cls('SellerClientHelper')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.repository')}.${cls('FailedDocumentsRepository')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.repository.stocktransportorder')}.${cls('StockTransportOrderRepository')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.repository.stocktransportreturn')}.${cls('StockTransportReturnItemRepository')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.repository.stocktransportreturn')}.${cls('StockTransportReturnRepository')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.service')}.${cls('DocumentSequenceService')};`,
+`${kw('import')} ${pkg('com.gdn.fbb.core.web.model.response.stocktransportreturn')}.${cls('ExternalCreateStockTransportReturnWebResponse')};`,
+`${kw('import')} ${pkg('lombok')}.${cls('RequiredArgsConstructor')};`,
+`${kw('import')} ${pkg('lombok.extern.slf4j')}.${cls('Slf4j')};`,
+`${kw('import')} ${pkg('org.apache.commons.lang3')}.${cls('StringUtils')};`,
+`${kw('import')} ${pkg('org.springframework.stereotype')}.${cls('Service')};`,
+`${kw('import')} ${pkg('reactor.util.function')}.${cls('Tuple4')};`,
+`${kw('import')} ${pkg('reactor.util.function')}.${cls('Tuples')};`,
+`${kw('import')} ${pkg('rx')}.${cls('Single')};`,
+``,
+`${kw('import')} ${pkg('java.util')}.${cls('ArrayList')};`,
+`${kw('import')} ${pkg('java.util')}.${cls('Arrays')};`,
+`${kw('import')} ${pkg('java.util')}.${cls('HashSet')};`,
+`${kw('import')} ${pkg('java.util')}.${cls('List')};`,
+`${kw('import')} ${pkg('java.util')}.${cls('Map')};`,
+`${kw('import')} ${pkg('java.util')}.${cls('Objects')};`,
+`${kw('import')} ${pkg('java.util')}.${cls('Optional')};`,
+`${kw('import')} ${pkg('java.util')}.${cls('Set')};`,
+`${kw('import')} ${pkg('java.util.function')}.${cls('Function')};`,
+`${kw('import')} ${pkg('java.util.stream')}.${cls('Collectors')};`,
+``,
+`${ann('@Slf4j')}`,
+`${ann('@Service')}`,
+`${ann('@RequiredArgsConstructor')}`,
+`${kw('public')} ${kw('class')} ${cls('ExternalCreateStockTransportReturnCommandImpl')} ${kw('implements')} ${ifc('ExternalCreateStockTransportReturnCommand')} {`,
+``,
+`    ${kw('private')} ${kw('final')} ${cls('StockTransportOrderRepository')} stockTransportOrderRepository;`,
+`    ${kw('private')} ${kw('final')} ${cls('StockTransportReturnRepository')} stockTransportReturnRepository;`,
+`    ${kw('private')} ${kw('final')} ${cls('StockTransportReturnItemRepository')} stockTransportReturnItemRepository;`,
+`    ${kw('private')} ${kw('final')} ${cls('FailedDocumentsRepository')} failedDocumentsRepository;`,
+`    ${kw('private')} ${kw('final')} ${cls('SellerClientHelper')} sellerClientHelper;`,
+`    ${kw('private')} ${kw('final')} ${cls('StockTransportReturnCommandHelper')} stockTransportReturnCommandHelper;`,
+`    ${kw('private')} ${kw('final')} ${cls('DocumentSequenceService')} documentSequenceService;`,
+``,
+`    ${kw('private')} ${kw('static')} ${kw('final')} ${cls('List')}<${cls('StockTransportReturnStatus')}> ${con('ALLOWED_STATUS_TO_PROCEED')} ${op('=')} ${cls('Arrays')}.${fn('asList')}(`,
+`        ${cls('StockTransportReturnStatus')}.${con('CREATION_FAILED')},`,
+`        ${cls('StockTransportReturnStatus')}.${con('ON_HOLD')}`,
+`    );`,
+``,
+`    ${ann('@Override')}`,
+`    ${kw('public')} ${cls('Single')}<${cls('ExternalCreateStockTransportReturnWebResponse')}> ${fn('execute')}(`,
+`            ${cls('ExternalCreateStockTransportReturnCommandRequest')} request) {`,
+`        log.${fn('debug')}(${str('"Saving external stock transport return with request: {}"')}, request);`,
+`        ${kw('try')} {`,
+`            ${cls('String')} clientCode ${op('=')} ${fn('getClientCode')}(request);`,
+`            ${cls('Tuple4')}<${cls('Boolean')}, ${cls('StockTransportReturn')}, ${cls('List')}<${cls('StockTransportReturnItem')}>, ${cls('Boolean')}> result ${op('=')}`,
+`                stockTransportReturnCommandHelper.${fn('executeInTransaction')}(() ${op('->')}`,
+`                    ${fn('saveStockTransportReturnInTransaction')}(request, clientCode)`,
+`            );`,
+``,
+`            ${kw('if')} (result.${fn('getT4')}()) {`,
+`                log.${fn('debug')}(${str('"Publishing stock transport return for document: {}"')}, result.${fn('getT2')}().${fn('getDocumentNumber')}());`,
+`                ${fn('publishStockTransportReturn')}(result.${fn('getT2')}(), result.${fn('getT3')}());`,
+`            }`,
+``,
+`            ${kw('return')} ${cls('Single')}.${fn('just')}(${fn('buildResponse')}(result.${fn('getT1')}(), result.${fn('getT2')}()));`,
+``,
+`        } ${kw('catch')} (${cls('BusinessException')} e) {`,
+`            log.${fn('error')}(${str('"BusinessException occurred: {}"')}, e.${fn('getMessage')}());`,
+`            ${kw('throw')} e;`,
+`        } ${kw('catch')} (${cls('Exception')} e) {`,
+`            log.${fn('error')}(${str('"Unexpected error occurred: {}"')}, e.${fn('getMessage')}());`,
+`            ${kw('throw')} ${kw('new')} ${cls('BusinessException')}(e.${fn('getMessage')}());`,
+`        }`,
+`    }`,
+``,
+`    ${kw('private')} ${cls('Tuple4')}<${cls('Boolean')}, ${cls('StockTransportReturn')}, ${cls('List')}<${cls('StockTransportReturnItem')}>, ${cls('Boolean')}>`,
+`        ${fn('saveStockTransportReturnInTransaction')}(`,
+`            ${cls('ExternalCreateStockTransportReturnCommandRequest')} request,`,
+`            ${cls('String')} clientCode) {`,
+``,
+`        ${cls('StockTransportOrder')} stockTransportOrder ${op('=')}`,
+`            stockTransportOrderRepository.${fn('findByDocumentNumberAndClientCode')}(`,
+`                request.${fn('getStockTransportOrderDocumentNumber')}(), clientCode`,
+`            ).${fn('orElseThrow')}(() ${op('->')} ${kw('new')} ${cls('BusinessException')}(${str('"STO not found"')}));`,
+``,
+`        ${fn('validateStockTransportOrder')}(stockTransportOrder);`,
+``,
+`        ${cls('Optional')}<${cls('StockTransportReturn')}> existingReturn ${op('=')}`,
+`            stockTransportReturnRepository.${fn('findByStockTransportOrderIdAndStatus')}(`,
+`                stockTransportOrder.${fn('getId')}(), ${cls('StockTransportReturnStatus')}.${con('ON_HOLD')}`,
+`            );`,
+``,
+`        ${cls('StockTransportReturn')} stockTransportReturn ${op('=')} existingReturn`,
+`            .${fn('map')}(r ${op('->')} ${fn('updateExistingReturn')}(r, request))`,
+`            .${fn('orElseGet')}(() ${op('->')} ${fn('createNewReturn')}(request, stockTransportOrder, clientCode));`,
+``,
+`        ${cls('List')}<${cls('StockTransportReturnItem')}> items ${op('=')} ${fn('buildReturnItems')}(request, stockTransportReturn);`,
+`        stockTransportReturnItemRepository.${fn('saveAll')}(items);`,
+``,
+`        ${kw('boolean')} isNew ${op('=')} !existingReturn.${fn('isPresent')}();`,
+`        ${kw('return')} ${cls('Tuples')}.${fn('of')}(isNew, stockTransportReturn, items, isNew);`,
+`    }`,
+``,
+`    ${kw('private')} ${kw('void')} ${fn('validateStockTransportOrder')}(${cls('StockTransportOrder')} stockTransportOrder) {`,
+`        ${kw('if')} (!${cls('StockTransportOrderType')}.${con('EXTERNAL')}.${fn('equals')}(stockTransportOrder.${fn('getOrderType')}())) {`,
+`            ${kw('throw')} ${kw('new')} ${cls('BusinessException')}(${str('"Invalid order type"')});`,
+`        }`,
+`        ${kw('if')} (${cls('StockType')}.${con('CONSIGNMENT')}.${fn('equals')}(stockTransportOrder.${fn('getStockType')}())) {`,
+`            ${kw('throw')} ${kw('new')} ${cls('BusinessException')}(${str('"Consignment type not allowed"')});`,
+`        }`,
+`    }`,
+``,
+`    ${kw('private')} ${cls('StockTransportReturn')} ${fn('createNewReturn')}(`,
+`            ${cls('ExternalCreateStockTransportReturnCommandRequest')} request,`,
+`            ${cls('StockTransportOrder')} sto,`,
+`            ${cls('String')} clientCode) {`,
+`        ${cls('String')} docNumber ${op('=')} documentSequenceService.${fn('generateDocumentNumber')}(${cls('DocumentType')}.${con('STOCK_TRANSPORT_RETURN')});`,
+`        ${cls('StockTransportReturn')} str ${op('=')} ${cls('StockTransportReturn')}.${fn('builder')}()`,
+`            .${fn('documentNumber')}(docNumber)`,
+`            .${fn('clientCode')}(clientCode)`,
+`            .${fn('stockTransportOrderId')}(sto.${fn('getId')}())`,
+`            .${fn('status')}(${cls('StockTransportReturnStatus')}.${con('CREATED')})`,
+`            .${fn('createdBy')}(request.${fn('getCreatedBy')}())`,
+`            .${fn('build')}();`,
+`        ${kw('return')} stockTransportReturnRepository.${fn('save')}(str);`,
+`    }`,
+``,
+`    ${kw('private')} ${cls('List')}<${cls('StockTransportReturnItem')}> ${fn('buildReturnItems')}(`,
+`            ${cls('ExternalCreateStockTransportReturnCommandRequest')} request,`,
+`            ${cls('StockTransportReturn')} str) {`,
+`        ${kw('return')} request.${fn('getItems')}().${fn('stream')}()`,
+`            .${fn('map')}(item ${op('->')} ${cls('StockTransportReturnItem')}.${fn('builder')}()`,
+`                .${fn('stockTransportReturnId')}(str.${fn('getId')}())`,
+`                .${fn('productSku')}(item.${fn('getProductSku')}())`,
+`                .${fn('quantity')}(item.${fn('getQuantity')}())`,
+`                .${fn('status')}(${cls('StockTransportReturnItemStatus')}.${con('PENDING')})`,
+`                .${fn('build')}())`,
+`            .${fn('collect')}(${cls('Collectors')}.${fn('toList')}());`,
+`    }`,
+``,
+`    ${kw('private')} ${kw('void')} ${fn('publishStockTransportReturn')}(`,
+`            ${cls('StockTransportReturn')} str,`,
+`            ${cls('List')}<${cls('StockTransportReturnItem')}> items) {`,
+`        ${cmt('// Publish event to message broker')}`,
+`        stockTransportReturnCommandHelper.${fn('publishReturnCreatedEvent')}(str, items);`,
+`    }`,
+``,
+`    ${kw('private')} ${cls('ExternalCreateStockTransportReturnWebResponse')} ${fn('buildResponse')}(`,
+`            ${cls('Boolean')} isNew,`,
+`            ${cls('StockTransportReturn')} str) {`,
+`        ${kw('return')} ${cls('ExternalCreateStockTransportReturnWebResponse')}.${fn('builder')}()`,
+`            .${fn('documentNumber')}(str.${fn('getDocumentNumber')}())`,
+`            .${fn('isNew')}(isNew)`,
+`            .${fn('build')}();`,
+`    }`,
+``,
+`    ${kw('private')} ${cls('String')} ${fn('getClientCode')}(${cls('ExternalCreateStockTransportReturnCommandRequest')} request) {`,
+`        ${kw('return')} sellerClientHelper.${fn('getClientCode')}(request.${fn('getSellerId')}());`,
+`    }`,
+`}`,
+``,
+];
+
+// ─── TERMINAL MESSAGES ──────────────────────────────────────────────────────
+const TERM_POOL = [
+  { type: 'prompt', cmd: './mvnw clean install -DskipTests' },
+  { type: 'out', txt: '[INFO] Scanning for projects...' },
+  { type: 'out', txt: '[INFO] ------------------------------------------------------------------------' },
+  { type: 'out', txt: '[INFO] BUILD SUCCESS' },
+  { type: 'out', txt: '[INFO] Total time:  12.341 s' },
+  { type: 'prompt', cmd: 'git status' },
+  { type: 'out', txt: 'On branch release/4.15.0-RELEASE' },
+  { type: 'out', txt: 'Changes not staged for commit:' },
+  { type: 'warn', txt: '  modified:   src/main/java/com/gdn/fbb/core/command/impl/stocktransportreturn/ExternalCreateStockTransportReturnCommandImpl.java' },
+  { type: 'prompt', cmd: 'git diff --stat HEAD' },
+  { type: 'out', txt: '1 file changed, 14 insertions(+), 3 deletions(-)' },
+  { type: 'prompt', cmd: './mvnw test -pl core -Dtest=ExternalCreateStockTransportReturnCommandImplTest' },
+  { type: 'info', txt: '[INFO] Running ExternalCreateStockTransportReturnCommandImplTest' },
+  { type: 'out', txt: '[INFO] Tests run: 8, Failures: 0, Errors: 0, Skipped: 0' },
+  { type: 'out', txt: '[INFO] BUILD SUCCESS' },
+  { type: 'prompt', cmd: 'git add -p' },
+  { type: 'out', txt: 'Stage this hunk [y,n,q,a,d,/,e,?]? y' },
+  { type: 'prompt', cmd: 'git commit -m "feat: handle ON_HOLD status in external create STO return"' },
+  { type: 'out', txt: '[release/4.15.0-RELEASE f3a92c1] feat: handle ON_HOLD status in external create STO return' },
+  { type: 'prompt', cmd: 'docker ps --filter name=fbb' },
+  { type: 'out', txt: 'CONTAINER ID   IMAGE                STATUS         PORTS' },
+  { type: 'out', txt: 'a1f2b3c4d5e6   fbb-core:latest     Up 3 hours     0.0.0.0:8080->8080/tcp' },
+  { type: 'err',  txt: '[WARN] Port 8081 already in use' },
+  { type: 'prompt', cmd: 'curl -s localhost:8080/actuator/health | jq' },
+  { type: 'out', txt: '{ "status": "UP", "components": { "db": { "status": "UP" } } }' },
+];
+
+// ─── RENDER LINES ────────────────────────────────────────────────────────────
+const gutter    = document.getElementById('gutter');
+const codeInner = document.getElementById('code-inner');
+const mmViewport= document.getElementById('mm-viewport');
+
+function buildEditor() {
+  gutter.innerHTML = '';
+  codeInner.innerHTML = '';
+
+  const mmFrag = document.getElementById('minimap');
+  mmFrag.querySelectorAll('.mm-line').forEach(e => e.remove());
+
+  LINES.forEach((html, i) => {
+    const ln = document.createElement('div');
+    ln.className = 'ln';
+    ln.textContent = i + 1;
+    gutter.appendChild(ln);
+
+    const row = document.createElement('div');
+    row.className = 'code-line';
+    row.innerHTML = html || '&nbsp;';
+    codeInner.appendChild(row);
+
+    const mm = document.createElement('div');
+    mm.className = 'mm-line' + (html.includes('kw') ? ' mm-kw' : html.includes('str') ? ' mm-str' : html.includes('ann') ? ' mm-ann' : html.includes('fn') ? ' mm-fn' : '');
+    mm.style.width = Math.max(10, Math.min(55, (html.replace(/<[^>]+>/g,'').length * .55))) + 'px';
+    mmFrag.insertBefore(mm, mmViewport);
+  });
+}
+
+buildEditor();
+
+// ─── STATE ───────────────────────────────────────────────────────────────────
+let currentLine  = 63;
+let scrollOffsetY= 0;
+const LINE_H = 20;
+const VISIBLE    = Math.floor((window.innerHeight - 28 - 34 - 24 - 140) / LINE_H);
+let isTyping     = false;
+let typingInsert = '';
+let typingLineIdx= 0;
+let typingCharIdx= 0;
+
+// ─── SCROLL ──────────────────────────────────────────────────────────────────
+function scrollTo(line) {
+  const maxScroll = Math.max(0, LINES.length - VISIBLE + 4);
+  const target    = Math.max(0, Math.min(line - Math.floor(VISIBLE / 2), maxScroll));
+  scrollOffsetY   = target;
+  codeInner.style.transform = `translateY(${-target * LINE_H + 10}px)`;
+  gutter.style.transform    = `translateY(${-target * LINE_H + 0}px)`;
+  // minimap viewport
+  const pct = target / Math.max(1, LINES.length - VISIBLE);
+  const mmH = document.getElementById('minimap').clientHeight;
+  mmViewport.style.top    = (pct * (mmH - 60)) + 'px';
+  mmViewport.style.height = '60px';
+}
+
+function setActiveLine(n) {
+  document.querySelectorAll('.code-line.active-line').forEach(e => e.classList.remove('active-line','cursor-line'));
+  document.querySelectorAll('.ln.active-ln').forEach(e => e.classList.remove('active-ln'));
+  const rows = codeInner.querySelectorAll('.code-line');
+  const lns  = gutter.querySelectorAll('.ln');
+  if (rows[n]) { rows[n].classList.add('active-line','cursor-line'); }
+  if (lns[n])  { lns[n].classList.add('active-ln'); }
+  currentLine = n;
+  document.getElementById('sb-ln').textContent = `Ln ${n+1}, Col ${Math.floor(Math.random()*40)+1}`;
+}
+
+// ─── TYPING EFFECT ───────────────────────────────────────────────────────────
+function startTyping() {
+  if (isTyping) return;
+  // Pick a long-ish line to "type into" visually (just rewrite a line char by char)
+  typingLineIdx = 47 + Math.floor(Math.random() * 30);
+  typingLineIdx = Math.min(typingLineIdx, LINES.length - 1);
+  const origHTML = LINES[typingLineIdx];
+  const plain    = origHTML.replace(/<[^>]+>/g,'');
+  typingInsert   = plain;
+  typingCharIdx  = 0;
+  isTyping       = true;
+
+  setActiveLine(typingLineIdx);
+  scrollTo(typingLineIdx);
+
+  const rows = codeInner.querySelectorAll('.code-line');
+  function typeNext() {
+    if (!isTyping) return;
+    typingCharIdx += Math.floor(Math.random() * 3) + 1;
+    if (typingCharIdx >= typingInsert.length) {
+      typingCharIdx = typingInsert.length;
+      rows[typingLineIdx].innerHTML = origHTML;
+      isTyping = false;
+      return;
+    }
+    const partial = typingInsert.slice(0, typingCharIdx);
+    rows[typingLineIdx].innerHTML = partial;
+    setTimeout(typeNext, 40 + Math.random() * 80);
+  }
+  // briefly clear
+  rows[typingLineIdx].innerHTML = '';
+  setTimeout(typeNext, 150);
+}
+
+// ─── TERMINAL ────────────────────────────────────────────────────────────────
+const termBody = document.getElementById('terminal-body');
+let termQueue  = [];
+let termPool   = [...TERM_POOL];
+let termIdx    = 0;
+
+function termLine(type, text) {
+  const div = document.createElement('div');
+  div.className = 'term-line';
+  if (type === 'prompt') {
+    div.innerHTML = `<span class="term-prompt">❯ </span><span class="term-cmd">${text}</span>`;
+  } else {
+    div.classList.add(`term-${type}`);
+    div.textContent = text;
+  }
+  termBody.appendChild(div);
+  while (termBody.children.length > 8) termBody.removeChild(termBody.firstChild);
+}
+
+function nextTermLine() {
+  if (termIdx >= TERM_POOL.length) termIdx = 0;
+  const t = TERM_POOL[termIdx++];
+  termLine(t.type, t.cmd || t.txt);
+}
+
+// ─── MINIMAP COLORS ──────────────────────────────────────────────────────────
+function shuffleMinimap() {
+  const mms = document.querySelectorAll('.mm-line');
+  const r = Math.floor(Math.random() * mms.length);
+  for (let i = r; i < Math.min(r+6, mms.length); i++) {
+    mms[i].style.opacity = (0.2 + Math.random() * 0.6).toFixed(2);
+  }
+}
+
+// ─── RANDOM SCROLL ───────────────────────────────────────────────────────────
+function doRandomScroll() {
+  const target = Math.floor(Math.random() * (LINES.length - VISIBLE));
+  const steps  = Math.abs(target - scrollOffsetY);
+  const dir    = target > scrollOffsetY ? 1 : -1;
+  let done     = 0;
+  const spd    = Math.max(1, Math.floor(steps / 20));
+
+  function tick() {
+    if (done >= steps) {
+      setActiveLine(Math.min(scrollOffsetY + Math.floor(VISIBLE/2), LINES.length-1));
+      return;
+    }
+    scrollOffsetY = Math.max(0, scrollOffsetY + dir * spd);
+    done += spd;
+    codeInner.style.transform = `translateY(${-scrollOffsetY * LINE_H + 10}px)`;
+    gutter.style.transform    = `translateY(${-scrollOffsetY * LINE_H}px)`;
+    const pct = scrollOffsetY / Math.max(1, LINES.length - VISIBLE);
+    const mmH = document.getElementById('minimap').clientHeight;
+    mmViewport.style.top = (pct * (mmH - 60)) + 'px';
+    setTimeout(tick, 18 + Math.random() * 12);
+  }
+  tick();
+}
+
+// ─── SPINNER ─────────────────────────────────────────────────────────────────
+const spinFrames = ['◐','◓','◑','◒'];
+let spinIdx = 0;
+setInterval(() => {
+  document.getElementById('sb-spinner').textContent = spinFrames[spinIdx++ % 4];
+}, 300);
+
+// ─── SCHEDULE EVENTS (use setInterval so they fire off-focus) ────────────────
+setActiveLine(63);
+scrollTo(63);
+
+// Typing every ~8-14s
+setInterval(() => {
+  if (!isTyping) startTyping();
+}, 9000 + Math.random() * 5000);
+
+// Scroll every ~5-10s
+setInterval(() => {
+  if (!isTyping) doRandomScroll();
+}, 6000 + Math.random() * 4000);
+
+// Terminal lines every ~2-4s
+setInterval(nextTermLine, 2500 + Math.random() * 1500);
+
+// Minimap shimmer every ~3s
+setInterval(shuffleMinimap, 3000);
+
+// Move cursor line every ~1.5s without scrolling
+setInterval(() => {
+  if (!isTyping) {
+    const next = scrollOffsetY + Math.floor(Math.random() * VISIBLE);
+    setActiveLine(Math.min(next, LINES.length - 1));
+  }
+}, 1800);
+
+// Seed terminal with first few lines
+for (let i = 0; i < 4; i++) nextTermLine();
+</script>
+</body>
+</html>
