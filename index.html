@@ -120,31 +120,38 @@
 
   /* ── SIDEBAR ── */
   #sidebar {
-    width: 200px;
+    width: clamp(140px, 17vw, 220px);
+    min-width: 0;
     background: var(--bg2);
     border-right: 1px solid var(--border);
     display: flex; flex-direction: column;
-    font-size: 11px;
+    font-size: clamp(9.5px, 1.1vw, 11px);
     overflow: hidden;
+    flex-shrink: 0;
   }
   .sidebar-title {
-    padding: 8px 12px 4px;
-    font-size: 10px; letter-spacing: .8px; text-transform: uppercase;
+    padding: 8px 10px 4px;
+    font-size: clamp(8.5px, 0.9vw, 10px); letter-spacing: .6px; text-transform: uppercase;
     color: var(--subtext); font-weight: 600;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .tree-item {
-    padding: 2px 10px;
-    display: flex; align-items: center; gap: 6px;
+    padding: 2px 8px;
+    display: flex; align-items: center; gap: 5px;
     color: var(--subtext); cursor: default;
+    min-width: 0;
+  }
+  .tree-item span:not(.fi) {
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    min-width: 0; flex: 1;
   }
   .tree-item:hover { background: var(--surface); color: var(--text); }
   .tree-item.active { background: var(--surface); color: var(--text); }
   .tree-item .fi { font-size: 10px; min-width: 12px; }
-  .tree-indent-1 { padding-left: 20px; }
-  .tree-indent-2 { padding-left: 32px; }
-  .tree-indent-3 { padding-left: 44px; }
-  .tree-indent-4 { padding-left: 56px; }
+  .tree-indent-1 { padding-left: 1.6em; }
+  .tree-indent-2 { padding-left: 2.8em; }
+  .tree-indent-3 { padding-left: 4.0em; }
+  .tree-indent-4 { padding-left: 5.2em; }
 
   /* ── EDITOR ── */
   #editor {
@@ -309,7 +316,7 @@
     #activitybar { width: 36px; }
     .ab-icon { width: 28px; height: 28px; font-size: 13px; }
 
-    #sidebar { width: 160px; font-size: 10px; }
+    #sidebar { font-size: clamp(9px, 1vw, 10px); }
     .tree-item { padding: 1px 8px; }
 
     #gutter { width: 38px; min-width: 38px; font-size: 10.5px; }
@@ -330,7 +337,6 @@
 
   /* very wide landscape — give code more room */
   @media (orientation: landscape) and (min-aspect-ratio: 16/9) {
-    #sidebar { width: 140px; }
     #minimap { width: 44px; }
   }
 </style>
@@ -381,27 +387,27 @@
   <!-- SIDEBAR -->
   <div id="sidebar">
     <div class="sidebar-title">Explorer</div>
-    <div class="tree-item"><span class="fi">▾</span> fbb-core-copy</div>
-    <div class="tree-item tree-indent-1"><span class="fi">▾</span> src/main/java</div>
-    <div class="tree-item tree-indent-2"><span class="fi">▾</span> com.gdn.fbb.core</div>
-    <div class="tree-item tree-indent-3"><span class="fi">▾</span> command</div>
-    <div class="tree-item tree-indent-4"><span class="fi">▾</span> impl</div>
-    <div class="tree-item tree-indent-4 active" style="padding-left:64px"><span class="fi" style="color:var(--orange)">☕</span> ExternalCreate…Impl.java</div>
-    <div class="tree-item tree-indent-3"><span class="fi">▾</span> constant</div>
-    <div class="tree-item tree-indent-4" style="padding-left:64px"><span class="fi" style="color:var(--orange)">☕</span> DocumentType.java</div>
-    <div class="tree-item tree-indent-4" style="padding-left:64px"><span class="fi" style="color:var(--orange)">☕</span> StockType.java</div>
-    <div class="tree-item tree-indent-3"><span class="fi">▾</span> entity</div>
-    <div class="tree-item tree-indent-4" style="padding-left:64px"><span class="fi" style="color:var(--orange)">☕</span> StockTransportReturn.java</div>
-    <div class="tree-item tree-indent-4" style="padding-left:64px"><span class="fi" style="color:var(--orange)">☕</span> StockTransportOrder.java</div>
-    <div class="tree-item tree-indent-3"><span class="fi">▾</span> helper</div>
-    <div class="tree-item tree-indent-4" style="padding-left:64px"><span class="fi" style="color:var(--orange)">☕</span> StockTransportReturnCommandHelper.java</div>
-    <div class="tree-item tree-indent-3"><span class="fi">▾</span> repository</div>
-    <div class="tree-item tree-indent-4" style="padding-left:64px"><span class="fi" style="color:var(--orange)">☕</span> StockTransportReturnRepository.java</div>
-    <div class="tree-item tree-indent-3"><span class="fi">▾</span> service</div>
-    <div class="tree-item tree-indent-4" style="padding-left:64px"><span class="fi" style="color:var(--orange)">☕</span> DocumentSequenceService.java</div>
-    <div class="tree-item tree-indent-2"><span class="fi">▶</span> resources</div>
-    <div class="tree-item tree-indent-1"><span class="fi">▶</span> src/test/java</div>
-    <div class="tree-item tree-indent-1"><span class="fi" style="color:var(--orange)">🍵</span> pom.xml</div>
+    <div class="tree-item"><span class="fi">▾</span><span>fbb-core-copy</span></div>
+    <div class="tree-item tree-indent-1"><span class="fi">▾</span><span>src/main/java</span></div>
+    <div class="tree-item tree-indent-2"><span class="fi">▾</span><span>com.gdn.fbb.core</span></div>
+    <div class="tree-item tree-indent-3"><span class="fi">▾</span><span>command</span></div>
+    <div class="tree-item tree-indent-4"><span class="fi">▾</span><span>impl</span></div>
+    <div class="tree-item tree-indent-4 active"><span class="fi" style="color:var(--orange)">☕</span><span>ExternalCreate…Impl.java</span></div>
+    <div class="tree-item tree-indent-3"><span class="fi">▾</span><span>constant</span></div>
+    <div class="tree-item tree-indent-4"><span class="fi" style="color:var(--orange)">☕</span><span>DocumentType.java</span></div>
+    <div class="tree-item tree-indent-4"><span class="fi" style="color:var(--orange)">☕</span><span>StockType.java</span></div>
+    <div class="tree-item tree-indent-3"><span class="fi">▾</span><span>entity</span></div>
+    <div class="tree-item tree-indent-4"><span class="fi" style="color:var(--orange)">☕</span><span>StockTransportReturn.java</span></div>
+    <div class="tree-item tree-indent-4"><span class="fi" style="color:var(--orange)">☕</span><span>StockTransportOrder.java</span></div>
+    <div class="tree-item tree-indent-3"><span class="fi">▾</span><span>helper</span></div>
+    <div class="tree-item tree-indent-4"><span class="fi" style="color:var(--orange)">☕</span><span>StockTransportReturnCommandHelper.java</span></div>
+    <div class="tree-item tree-indent-3"><span class="fi">▾</span><span>repository</span></div>
+    <div class="tree-item tree-indent-4"><span class="fi" style="color:var(--orange)">☕</span><span>StockTransportReturnRepository.java</span></div>
+    <div class="tree-item tree-indent-3"><span class="fi">▾</span><span>service</span></div>
+    <div class="tree-item tree-indent-4"><span class="fi" style="color:var(--orange)">☕</span><span>DocumentSequenceService.java</span></div>
+    <div class="tree-item tree-indent-2"><span class="fi">▶</span><span>resources</span></div>
+    <div class="tree-item tree-indent-1"><span class="fi">▶</span><span>src/test/java</span></div>
+    <div class="tree-item tree-indent-1"><span class="fi" style="color:var(--orange)">🍵</span><span>pom.xml</span></div>
   </div>
 
   <!-- EDITOR -->
